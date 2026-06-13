@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # DATABASES & MESSAGE BROKER
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_USER: ecommerce_user
+      POSTGRES_PASSWORD: ecommerce_password
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    networks:
+      - ecommerce-net
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:6-jammy
+    container_name: ecommerce-mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - ecommerce-net
+    volumes:
+      - mongodb-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ecommerce-net
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ecommerce-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+    networks:
+      - ecommerce-net
+
+  # ==========================================
+  # INFRASTRUCTURE & DISCOVERY
+  # ==========================================
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: ecommerce-nginx-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - eureka-server
+    networks:
+      - ecommerce-net
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: ecommerce-eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - ecommerce-net
+
+  # ==========================================
+  # MICROSERVICES
+  # ==========================================
+  user-service:
+    build:
+      context: ./user-service
+    container_name: ecommerce-user-service
+    ports:
+      - "8081:8080" # Exposed externally on 8081 just for testing, but internal is 8080
+    depends_on:
+      - postgres
+      - eureka-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ecommerce-postgres:5432/ecommerce_db
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://ecommerce-eureka-server:8761/eureka/
+    networks:
+      - ecommerce-net
+
+  product-service:
+    build:
+      context: ./product-service
+    container_name: ecommerce-product-service
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mongodb
+      - eureka-server
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://ecommerce-mongodb:27017/ecommerce_db
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://ecommerce-eureka-server:8761/eureka/
+    networks:
+      - ecommerce-net
+
+  cart-service:
+    build:
+      context: ./cart-service
+    container_name: ecommerce-cart-service
+    ports:
+      - "8083:8080"
+    depends_on:
+      - redis
+      - eureka-server
+    environment:
+      - SPRING_REDIS_HOST=ecommerce-redis
+      - SPRING_REDIS_PORT=6379
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://ecommerce-eureka-server:8761/eureka/
+    networks:
+      - ecommerce-net
+
+  order-service:
+    build:
+      context: ./order-service
+    container_name: ecommerce-order-service
+    ports:
+      - "8084:8080"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ecommerce-postgres:5432/ecommerce_db
+      - SPRING_RABBITMQ_HOST=ecommerce-rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://ecommerce-eureka-server:8761/eureka/
+    networks:
+      - ecommerce-net
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: ecommerce-notification-service
+    ports:
+      - "8085:8080"
+    depends_on:
+      - rabbitmq
+      - eureka-server
+    environment:
+      - SPRING_RABBITMQ_HOST=ecommerce-rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://ecommerce-eureka-server:8761/eureka/
+    networks:
+      - ecommerce-net
+
+networks:
+  ecommerce-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongodb-data:

@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: product-service
+  data:
+    mongodb:
+      # Use Docker compose service name for host
+      uri: mongodb://ecommerce-mongodb:27017/ecommerce_db
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://ecommerce-eureka-server:8761/eureka/
+  instance:
+    preferIpAddress: true

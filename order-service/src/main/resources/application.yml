@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    # We will share the postgres instance but use a different schema or simply distinct tables
+    url: jdbc:postgresql://ecommerce-postgres:5432/ecommerce_db
+    username: ecommerce_user
+    password: ecommerce_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  rabbitmq:
+    host: ecommerce-rabbitmq
+    port: 5672
+    username: rabbitmq
+    password: rabbitmq
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://ecommerce-eureka-server:8761/eureka/
+  instance:
+    preferIpAddress: true
