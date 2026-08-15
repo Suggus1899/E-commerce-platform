@@ -1,0 +1,3 @@
+package com.ecommerce.user.dto;
+
+public record AuthResponse(String token, Long id, String username, String email, String role) {}

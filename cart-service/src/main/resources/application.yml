@@ -15,3 +15,7 @@ eureka:
       defaultZone: http://ecommerce-eureka-server:8761/eureka/
   instance:
     preferIpAddress: true
+
+jwt:
+  # Must match the secret used by user-service to sign tokens
+  secret: REDACTED

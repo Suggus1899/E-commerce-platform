@@ -8,6 +8,10 @@ spring:
     mongodb:
       # Use Docker compose service name for host
       uri: mongodb://ecommerce-mongodb:27017/ecommerce_db
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 eureka:
   client:
@@ -15,3 +19,10 @@ eureka:
       defaultZone: http://ecommerce-eureka-server:8761/eureka/
   instance:
     preferIpAddress: true
+
+jwt:
+  # Must match the secret used by user-service to sign tokens
+  secret: REDACTED
+
+app:
+  upload-dir: ${APP_UPLOAD_DIR:/data/uploads}
