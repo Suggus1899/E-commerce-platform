@@ -36,6 +36,13 @@ public class CartController {
             }
             return "user:" + userId;
         }
+        if (pathCartId.startsWith("user:")) {
+            Object userId = request.getAttribute("jwt_userId");
+            if (userId == null || !pathCartId.equals("user:" + userId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "No podes acceder al carrito de otro usuario");
+            }
+        }
         return pathCartId;
     }
 

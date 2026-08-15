@@ -71,19 +71,21 @@ public class ProductAdminController {
         }
         Product existing = existingOpt.get();
         existing.setName(body.getName());
-        existing.setSlug(body.getSlug());
+        if (body.getSlug() != null && !body.getSlug().isBlank()) {
+            existing.setSlug(body.getSlug());
+        }
         existing.setDescription(body.getDescription());
         existing.setSku(body.getSku());
         existing.setPrice(body.getPrice());
         existing.setSalePrice(body.getSalePrice());
         existing.setStock(body.getStock());
         existing.setCategoryId(body.getCategoryId());
-        existing.setImages(body.getImages());
         existing.setAttributes(body.getAttributes());
         existing.setFeatured(body.isFeatured());
         existing.setOnSale(body.isOnSale());
         existing.setIsNew(body.getIsNew());
-        existing.setActive(body.isActive());
+        // images gestionadas solo via POST /{id}/images, active solo via DELETE (soft delete):
+        // no se pisan aca para que un PUT parcial del formulario no las vacie/reactive.
         existing.setUpdatedAt(Instant.now());
         Product saved = productRepository.save(existing);
         return ResponseEntity.ok(saved);

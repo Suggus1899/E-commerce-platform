@@ -40,7 +40,11 @@ public class CategoryAdminController {
             return ResponseEntity.notFound().build();
         }
         Category existing = existingOpt.get();
+        boolean nameChanged = body.getName() != null && !body.getName().equals(existing.getName());
         existing.setName(body.getName());
+        if (nameChanged) {
+            existing.setSlug(generateUniqueSlug(body.getName()));
+        }
         existing.setParentId(body.getParentId());
         existing.setActive(body.isActive());
         Category saved = categoryRepository.save(existing);
